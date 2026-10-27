@@ -24,9 +24,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Build release (unsigned)
         run: |
           gradle assembleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx2048m -Dfile.encoding=UTF-8"
