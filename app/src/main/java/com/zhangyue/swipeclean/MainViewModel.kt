@@ -132,6 +132,12 @@ class MainViewModel : ViewModel() {
         if (roundIndex.value > 0) roundIndex.value -= 1
     }
 
+    /** 「不删了」：还原本轮全部待删（含取消收藏不动），常用于结算卡放弃删除 */
+    fun undoAll() {
+        while (session.undo()) { /* 逐条弹撤销栈：UnDelete 出列 / UnLike 反收藏 */ }
+        undoTick.value += 1
+    }
+
     fun buildTrashIntent(): android.content.IntentSender? = session.buildTrashIntent()
 
     /** 相似页按勾选集合生成系统删除确认 */
