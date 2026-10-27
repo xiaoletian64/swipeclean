@@ -11,10 +11,17 @@ on:
       - 'gradle.properties'
       - '.github/workflows/android-build.yml'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g. ios-0.3.0-vc5 style; empty = no release)'
+        required: false
+        default: ''
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -28,8 +35,21 @@ jobs:
         run: |
           gradle assembleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx2048m -Dfile.encoding=UTF-8"
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: swipeclean-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Create release with APK (manual dispatch only)
+        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "swipeclean-unsigned-${{ inputs.release_tag }}.apk"
+          gh release create "${{ inputs.release_tag }}" \
+            "swipeclean-unsigned-${{ inputs.release_tag }}.apk" \
+            --title "SwipeClean ${{ inputs.release_tag }} (unsigned)" \
+            --notes "CI unsigned build. Sign with notesvault keystore before distribution." \
+            --latest=false || gh release upload "${{ inputs.release_tag }}" \
+            "swipeclean-unsigned-${{ inputs.release_tag }}.apk" --clobber
